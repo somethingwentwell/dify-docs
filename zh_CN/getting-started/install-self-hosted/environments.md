@@ -131,21 +131,48 @@ Flask 调试模式，开启可在接口输出 trace 信息，方便调试。
 * REDIS\_USERNAME：Redis 用户名，默认为空
 * REDIS\_PASSWORD：Redis 密码，默认为空，强烈建议设置密码。
 * REDIS\_USE\_SSL：是否使用 SSL 协议进行连接，默认 false
+* REDIS\_USE\_SENTINEL：使用 Redis Sentinel 连接 Redis 服务器
+* REDIS\_SENTINELS：哨兵节点，格式：`<sentinel1_ip>:<sentinel1_port>,<sentinel2_ip>:<sentinel2_port>,<sentinel3_ip>:<sentinel3_port>`
+* REDIS\_SENTINEL\_SERVICE\_NAME：哨兵服务名，同 Master Name
+* REDIS\_SENTINEL\_USERNAME：哨兵的用户名
+* REDIS\_SENTINEL\_PASSWORD：哨兵的密码
+* REDIS\_SENTINEL\_SOCKET\_TIMEOUT：哨兵超时时间，默认值：0.1，单位：秒
 
 #### Celery 配置
 
 *   CELERY\_BROKER\_URL
 
-    格式如下
+    格式如下（直连模式）
 
     <pre><code><strong>redis://&#x3C;redis_username>:&#x3C;redis_password>@&#x3C;redis_host>:&#x3C;redis_port>/&#x3C;redis_database>
     </strong><strong>  
     </strong></code></pre>
 
     范例：`redis://:difyai123456@redis:6379/1`
+
+    哨兵模式
+
+    <pre><code><strong>sentinel://&#x3C;sentinel_username>:&#x3C;sentinel_password>@&#x3C;sentinel_host>:&#x3C;sentinel_port>/&#x3C;redis_database>
+    </strong><strong>  
+    </strong></code></pre>
+
+    范例：`sentinel://localhost:26379/1;sentinel://localhost:26380/1;sentinel://localhost:26381/1`
+    
 *   BROKER\_USE\_SSL
 
     若设置为 true，则使用 SSL 协议进行连接，默认 false
+
+*   CELERY\_USE\_SENTINEL
+
+    若设置为 true，则启用哨兵模式，默认 false
+
+*   CELERY_SENTINEL_MASTER_NAME
+
+    哨兵的服务名，即 Master Name
+
+*   CELERY_SENTINEL_SOCKET_TIMEOUT
+
+    哨兵连接超时时间，默认值：0.1，单位：秒
 
 #### CORS 配置
 
@@ -177,6 +204,12 @@ Flask 调试模式，开启可在接口输出 trace 信息，方便调试。
     *   azure-blob
 
         Azure Blob 存储，若选择此项则需要设置下方 AZURE\_BLOB\_ 开头的配置。
+    *   huawei-obs
+
+        Huawei OBS 存储，若选择此项则需要设置下方 HUAWEI\_OBS\_ 开头的配置。
+    *   volcengine-tos
+
+        Volcengine TOS 存储，若选择此项则需要设置下方 VOLCENGINE\_TOS\_ 开头的配置。
 *   STORAGE\_LOCAL\_PATH
 
     默认为 storage，即存储在当前目录的 storage 目录下。若使用 docker 或 docker-compose 进行部署，请务必将两个容器中 `/app/api/storage` 目录挂载到同一个本机目录，否则可能会出现文件找不到的报错。
@@ -189,6 +222,22 @@ Flask 调试模式，开启可在接口输出 trace 信息，方便调试。
 * AZURE\_BLOB\_ACCOUNT\_KEY: your-account-key 如 'difyai'
 * AZURE\_BLOB\_CONTAINER\_NAME: your-container-name 如 'difyai-container'
 * AZURE\_BLOB\_ACCOUNT\_URL: 'https://\<your\_account\_name>.blob.core.windows.net'
+* ALIYUN\_OSS\_BUCKET_NAME: your-bucket-name 如 'difyai'
+* ALIYUN\_OSS\_ACCESS_KEY: your-access-key 如 'difyai'
+* ALIYUN\_OSS\_SECRET_KEY: your-secret-key 如 'difyai'
+* ALIYUN\_OSS\_ENDPOINT: https://oss-ap-southeast-1-internal.aliyuncs.com # 参考文档: https://help.aliyun.com/zh/oss/user-guide/regions-and-endpoints
+* ALIYUN\_OSS\_REGION: ap-southeast-1 # 参考文档: https://help.aliyun.com/zh/oss/user-guide/regions-and-endpoints
+* ALIYUN\_OSS\_AUTH_VERSION: v4
+* ALIYUN\_OSS\_PATH: your-path # 路径不要使用斜线 "/" 开头，阿里云 OSS 不支持。参考文档: https://api.aliyun.com/troubleshoot?q=0016-00000005
+* HUAWEI\_OBS\_BUCKET\_NAME: your-bucket-name 如 'difyai'
+* HUAWEI\_OBS\_SECRET\_KEY: your-secret-key 如 'difyai'
+* HUAWEI\_OBS\_ACCESS\_KEY: your-access-key 如 'difyai'
+* HUAWEI\_OBS\_SERVER: your-server-url # 参考文档: https://support.huaweicloud.com/sdk-python-devg-obs/obs_22_0500.html
+* VOLCENGINE_TOS_BUCKET_NAME: your-bucket-name 如 'difyai'
+* VOLCENGINE_TOS_SECRET_KEY: your-secret-key 如 'difyai'
+* VOLCENGINE_TOS_ACCESS_KEY: your-access-key 如 'difyai'
+* VOLCENGINE_TOS_REGION: your-region 如 'cn-guangzhou' # 参考文档: https://www.volcengine.com/docs/6349/107356
+* VOLCENGINE_TOS_ENDPOINT: your-endpoint 如 'tos-cn-guangzhou.volces.com' # 参考文档: https://www.volcengine.com/docs/6349/107356
 
 #### 向量数据库配置
 
@@ -227,21 +276,18 @@ Flask 调试模式，开启可在接口输出 trace 信息，方便调试。
 *   PINECONE\_ENVIRONMENT
 
     Pinecone 所在的额环境，如：`us-east4-gcp`
-*   MILVUS\_HOST
+*   MILVUS\_URI
 
-    Milvus host 配置。
-*   MILVUS\_PORT
+    Milvus的URI配置。例如：http://localhost:19530。对于Zilliz Cloud，请将URI和令牌调整为 [Public Endpoint and Api key](https://docs.zilliz.com/docs/on-zilliz-cloud-console#free-cluster-details) 。
+*   MILVUS\_TOKEN
 
-    Milvus post 配置。
+    Milvus token 配置, 默认为空。
 *   MILVUS\_USER
 
     Milvus user 配置，默认为空。
 *   MILVUS\_PASSWORD
 
     Milvus 密码配置，默认为空。
-*   MILVUS\_SECURE
-
-    Milvus 是否使用 SSL 连接，默认 false。
 *   MYSCALE\_HOST
 
     MyScale host 配置。
@@ -353,6 +399,48 @@ Notion 集成配置，变量可通过申请 Notion integration 获取：[https:/
     * MAIL\_DEFAULT\_SEND\_FROM\
       发件人的电子邮件名称，例如：no-reply [no-reply@dify.ai](mailto:no-reply@dify.ai)，非必需。
 
+#### 模型供应商 & 工具 位置配置
+
+用于指定应用中可以使用的模型供应商和工具。您可以自定义哪些工具和模型供应商可用，以及它们在应用界面中的顺序和包含/排除情况。
+
+详见可用的[工具](https://github.com/langgenius/dify/blob/main/api/core/tools/provider/_position.yaml) 和 [模型供应商](https://github.com/langgenius/dify/blob/main/api/core/model_runtime/model_providers/_position.yaml)。
+
+* POSITION_TOOL_PINS
+
+    将列出的工具固定在列表顶部，确保它们在界面中置顶出现。（使用逗号分隔的值，**中间不留空格**。）
+
+    示例: `POSITION_TOOL_PINS=bing,google`
+
+* POSITION_TOOL_INCLUDES
+
+    指定要在应用中包含的工具。只有此处列出的工具才可用。如果未设置，则除非在 POSITION_TOOL_EXCLUDES 中指定，否则所有工具都会包含在内。（使用逗号分隔的值，**中间不留空格**。）
+
+    示例: `POSITION_TOOL_INCLUDES=bing,google`
+
+* POSITION_TOOL_EXCLUDES
+
+    排除在应用中显示或使用的特定工具。此处列出的工具将从可用选项中省略，除非它们被固定。（使用逗号分隔的值，**中间不留空格**。）
+
+    示例: `POSITION_TOOL_EXCLUDES=yahoo,wolframalpha`
+
+* POSITION_PROVIDER_PINS
+
+    将列出的模型供应商固定在列表顶部，确保它们在界面中置顶出现。（使用逗号分隔的值，**中间不留空格**。）
+
+    示例: `POSITION_PROVIDER_PINS=openai,openllm`
+
+* POSITION_PROVIDER_INCLUDES
+
+    指定要在应用中包含的模型供应商。只有此处列出的供应商才可用。如果未设置，则除非在 POSITION_PROVIDER_EXCLUDES 中指定，否则所有供应商都会包含在内。（使用逗号分隔的值，**中间不留空格**。）
+
+    示例: `POSITION_PROVIDER_INCLUDES=cohere,upstage`
+
+* POSITION_PROVIDER_EXCLUDES
+
+    排除在应用中显示特定模型供应商。此处列出的供应商将从可用选项中移除，除非它们被置顶。（使用逗号分隔的值，**中间不留空格**。）
+
+    示例: `POSITION_PROVIDER_EXCLUDES=openrouter,ollama`
+
 #### 其他
 
 * INVITE\_EXPIRY\_HOURS：成员邀请链接有效时间（小时），默认：72。
@@ -383,7 +471,7 @@ API Url，用于**给前端**展示 Service API Base Url，传空则为同域。
 
 > ⚠️ 修改于 0.3.8，于 0.4.9 废弃，替代为 `APP_API_URL` 和 `APP_WEB_URL`。
 
-WebApp Url，用于声明**前端** API 后端地址，传空则为同域。范例：`https://app.dify.ai`
+WebApp Url，用于显示文件预览或下载 URL 到前端作为多模型输入，传空则为同域。范例：`https://udify.app/`
 
 #### Session 配置
 
